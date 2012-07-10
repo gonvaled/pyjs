@@ -46,9 +46,11 @@ class MySelect2TaggingComponent(HTML):
         # This is supposed to bind the change event to the change pyjs function
         #   Not yet working
         wnd().change = self.change
-        myjs = 'parent.jQuery("#%s").bind("change", change);' % (self.myid)
+        # TODO: how do I bind the change event to self.change?!
+        #myjs = 'parent.jQuery("#%s").bind("change", change);' % (self.myid)
         #myjs = 'parent.jQuery("#%s").bind("change", self["change"]);' % (self.myid)
         #myjs = 'parent.jQuery("#%s").bind("change", this.change);' % (self.myid)
+        myjs = 'parent.jQuery("#%s").bind("change", window.change);' % (self.myid)
         log.info("Now calling JS: %s", myjs)
         JS(""" eval(@{{myjs}}) """)
 
@@ -61,7 +63,7 @@ class MySelect2TaggingComponent(HTML):
         # TODO: what about self.selected?
         log.info("Now calling JS: %s", myjs)
         JS(""" eval(@{{myjs}}) """)
-        #self.setup_js_show()
+        self.setup_js_show()
         self.setup_pyjs_change()
 
     def get_val(self):
