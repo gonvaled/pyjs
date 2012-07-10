@@ -12,14 +12,14 @@ TARGETS = {
                 url=
                 "http://code.jquery.com/"+\
                         "jquery-1.7.2.min.js",
-                dst=os.path.join(head, 'output', 'jquery.min.js'),
+                dst=os.path.join(head, 'public', 'jquery.min.js'),
                 unzip=False,
             ),
             dict(
                 url=
                 "https://github.com/downloads/ivaynberg/"+\
                         "select2/select2-2.1.zip",
-                dst=os.path.join(head, 'output', 'select2'),
+                dst=os.path.join(head, 'public', 'select2'),
                 unzip=True,
             ),
         ],

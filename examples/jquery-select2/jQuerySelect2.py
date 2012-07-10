@@ -25,19 +25,30 @@ class MySelect2TaggingComponent(HTML):
         self.selected = selected
         log.info("html = '%s'", html)
         HTML.__init__(self, html)
-        wnd().change = self.change
 
     def change(self):
-        log.info("MySelect2TaggingComponent > show", "event received!")
+        log.info("event received!")
 
-    def setup_show(self):
+    def setup_js_show(self):
+        # This is a pure javascript function, which can be triggered by binding with jQuery
+        #   the "change" event to it
         show = '''
          function show() {
                 var e=parent.jQuery("<div style='background-color:yellow;'>change fired</div>");
                 parent.jQuery("#%s-show").append(e);
                 e.animate({opacity:0}, 1000, 'linear', function() { e.remove(); });
             };''' % (self.myid)
-        myjs = '%s parent.jQuery("#%s").bind("change", change);' % (show, self.myid)
+        myjs = '%s parent.jQuery("#%s").bind("change", show);' % (show, self.myid)
+        log.info("Now calling JS: %s", myjs)
+        JS(""" eval(@{{myjs}}) """)
+
+    def setup_pyjs_change(self):
+        # This is supposed to bind the change event to the change pyjs function
+        #   Not yet working
+        wnd().change = self.change
+        myjs = 'parent.jQuery("#%s").bind("change", change);' % (self.myid)
+        #myjs = 'parent.jQuery("#%s").bind("change", self["change"]);' % (self.myid)
+        #myjs = 'parent.jQuery("#%s").bind("change", this.change);' % (self.myid)
         log.info("Now calling JS: %s", myjs)
         JS(""" eval(@{{myjs}}) """)
 
@@ -50,7 +61,8 @@ class MySelect2TaggingComponent(HTML):
         # TODO: what about self.selected?
         log.info("Now calling JS: %s", myjs)
         JS(""" eval(@{{myjs}}) """)
-        self.setup_show()
+        #self.setup_js_show()
+        self.setup_pyjs_change()
 
     def get_val(self):
         myjs = 'parent.jQuery("#%s").select2("val");' % (self.myid)
