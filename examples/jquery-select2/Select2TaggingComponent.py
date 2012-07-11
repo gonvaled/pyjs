@@ -50,13 +50,13 @@ class Select2TaggingComponent(HTML):
         JS(""" eval(@{{myjs}}) """)
 
     def bind_pyjs_change(self):
-        # Here bind the change event to the self.change pyjs method
-        # First bind the wnd().change JS function to the self.change method
-        # TODO: this will bind ALL the wnd().change function to the last Select2TaggingComponent
-        #  component created, effectively preventing having more than one
-        wnd().change = self.change
-        # Now bind the change event to the wnd().change JS function, which is actually the pyjs self.change method
-        myjs = 'parent.jQuery("#%s").bind("change", function() { parent.change() });' % (self.myid)
+        # Here we bind the change event to the self.change pyjs method
+        # Since we are binding a global function to the self.change method, we want
+        #   that global function to be unique (or at least to have the myid suffix)
+        global_unique_change = "change_%s" % (self.myid)
+        setattr(wnd(),global_unique_change,self.change)
+        # Now bind the change event to the wnd().global_unique_change function, which is actually self.change
+        myjs = 'parent.jQuery("#%s").bind("change", function() { parent.%s() });' % (self.myid, global_unique_change)
         log.info("Now calling JS: %s", myjs)
         JS(""" eval(@{{myjs}}) """)
 
