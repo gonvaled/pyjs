@@ -1,86 +1,58 @@
 import pyjd # this is dummy in pyjs
 
-import random
-
-from pyjamas.ui.HTML import HTML
+from pyjamas.ui.VerticalPanel import VerticalPanel
+from pyjamas.ui.RootPanel import RootPanel
+from pyjamas.ui.Button import Button
+from pyjamas.ui.DialogBox import DialogBox
 from pyjamas import logging
-from __pyjamas__ import JS
-from __pyjamas__ import wnd
+from pyjamas import Window
+
+from Select2TaggingComponent import Select2TaggingComponent
 
 log = logging.getConsoleLogger()
 
-def get_random_id():
-    return "wav%s" % (random.randint(0, 10000))
+class MyTagger(VerticalPanel):
 
-class MySelect2TaggingComponent(HTML):
-
-    def __init__(self, tags = None, width = 300, selected = None, myid = None):
-        #log.info("tags='%s' width='%s' selected='%s'", tags, width, selected)
-        if myid == None:
-            myid = get_random_id()
-        self.myid = myid
-        self.tags = tags
-        html  =  '<p><input type="hidden" id="%s" style="width:%dpx"/></p>' % (myid, width)
-        html +=  '<div id="%s-show"></div>' % (myid)
-        self.selected = selected
-        log.info("html = '%s'", html)
-        HTML.__init__(self, html)
+    def __init__ (self, tags = None, width = 300, selected = None, myid = None):
+        VerticalPanel.__init__(self)
+        self.s2 = Select2TaggingComponent(tags, width, selected, myid)
+        self.reset_button = Button("Reset", self)
+        self.show_values_button = Button("Show", self)
+        self.add(self.s2)
+        self.add(self.reset_button)
+        self.add(self.show_values_button)
+        self.s2.change = self.change
 
     def change(self):
-        log.info("event received!")
+        txt = "Object with id=%s has value '%s'" % (self.s2.myid, self.s2.get_val())
+        log.info(txt)
+        self.create_popup(txt)
 
-    def setup_js_show(self):
-        # This is a pure javascript function, which can be triggered by binding with jQuery
-        #   the "change" event to it
-        show = '''
-         function show() {
-                var e=parent.jQuery("<div style='background-color:yellow;'>change fired</div>");
-                parent.jQuery("#%s-show").append(e);
-                e.animate({opacity:0}, 1000, 'linear', function() { e.remove(); });
-            };''' % (self.myid)
-        myjs = '%s parent.jQuery("#%s").bind("change", show);' % (show, self.myid)
-        log.info("Now calling JS: %s", myjs)
-        JS(""" eval(@{{myjs}}) """)
+    def create_popup(self, txt):
+        popup = DialogBox(False, False)
+        popup.onClick = lambda w: popup.hide()
+        popup.setHTML('<b>%s</b>' % (txt))
+        popup.setWidget(Button('Close', popup))
+        popup.show()
 
-    def setup_pyjs_change(self):
-        # This is supposed to bind the change event to the change pyjs function
-        #   Not yet working
-        wnd().change = self.change
-        # TODO: how do I bind the change event to self.change?!
-        #myjs = 'parent.jQuery("#%s").bind("change", change);' % (self.myid)
-        #myjs = 'parent.jQuery("#%s").bind("change", self["change"]);' % (self.myid)
-        #myjs = 'parent.jQuery("#%s").bind("change", this.change);' % (self.myid)
-        myjs = 'parent.jQuery("#%s").bind("change", window.change);' % (self.myid)
-        log.info("Now calling JS: %s", myjs)
-        JS(""" eval(@{{myjs}}) """)
-
-    def final_setup(self):
-        if self.tags:
-            tags = ','.join(['"%s"' % (tag) for tag in self.tags])
-        else:
-            tags = ''
-        myjs = 'parent.jQuery("#%s").select2({tags:[%s]});' % (self.myid, tags)
-        # TODO: what about self.selected?
-        log.info("Now calling JS: %s", myjs)
-        JS(""" eval(@{{myjs}}) """)
-        self.setup_js_show()
-        self.setup_pyjs_change()
-
-    def get_val(self):
-        myjs = 'parent.jQuery("#%s").select2("val");' % (self.myid)
-        return JS(""" eval(@{{myjs}}) """)
-
-    def update(self, tags, selected):
-        pass
-
-from pyjamas import Window
-from pyjamas.ui.RootPanel import RootPanel
+    def onClick(self, sender):
+        if sender == self.reset_button:
+            log.info('Updating')
+            values = [ { 'id' : 'id1', 'text': 'text1'}, { 'id' : 'id2', 'text': 'text2'}]
+            self.s2.update(values)
+        elif sender == self.show_values_button:
+            txt = "Object with id=%s has value '%s'" % (self.s2.myid, self.s2.get_val())
+            log.info(txt)
+            self.create_popup(txt)
 
 class MainWindow:
 
     def onModuleLoad(self):
 
-        my_select2_tagging_component = MySelect2TaggingComponent()
+        # TODO: the change event does not work properly when there are
+        #   several Select2TaggingComponent.
+        tagger1 = MyTagger(myid = 'example1')
+        tagger2 = MyTagger(myid = 'example2')
 
         # Get rid of scrollbars, and clear out the window's built-in margin,
         # because we want to take advantage of the entire client area.
@@ -88,10 +60,13 @@ class MainWindow:
         Window.setMargin("0px")
 
         # Add the component to the DOM
-        RootPanel().add(my_select2_tagging_component)
+        RootPanel().add(tagger1)
+        RootPanel().add(tagger2)
 
         # Now that it is in the DOM, select2 can perform the final setup
-        my_select2_tagging_component.final_setup()
+        # TODO: is it possible that the component automatically detects this?
+        tagger1.s2.final_setup()
+        tagger2.s2.final_setup()
 
 if __name__ == '__main__':
     pyjd.setup("./public/jQuerySelect2.html")
